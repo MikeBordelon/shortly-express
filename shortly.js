@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var session = require('express-session');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -20,27 +20,47 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Initiate the session cookies
+app.use(session({
+  secret: 'My Secret Life',
+  cookie: {}
+}));
+
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+var restrict = function(req, res, next) {
+  if (req.session.login) {
+    next();
+  } else {
+    //route user to login view
+    // res.session.error = 'Access denied';
+    res.redirect('/login');
+  }
+};
+
+app.get('/', restrict,
 function(req, res) {
+  console.log('get1');
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', restrict,
 function(req, res) {
+  console.log('get2');
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links', restrict,
 function(req, res) {
+  console.log('get3');
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -75,6 +95,24 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+
+app.get('/login', function(req, res) {
+  // serve login page
+  res.render('login');
+});
+
+app.post('/login', function(req, res) {
+  // console.log('post req:', req.body);
+
+  if (req.body.username === 'Phillip' && req.body.password === 'Phillip') {
+    req.session.login = true;
+    res.redirect('/');
+  } else {
+    res.redirect('/login');
+  }
+
+
+});
 
 
 
