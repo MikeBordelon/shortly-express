@@ -10,6 +10,8 @@ var User = db.Model.extend({
   links: function() {
     return this.hasMany(Link);
   }
+
+
 });
 
 module.exports = User;

@@ -24,6 +24,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Initiate the session cookies
 app.use(session({
   secret: 'My Secret Life',
+  login: false,
+  resave: null,
+  saveUninitialized: true,
   cookie: {}
 }));
 
@@ -34,8 +37,6 @@ var restrict = function(req, res, next) {
   if (req.session.login) {
     next();
   } else {
-    //route user to login view
-    // res.session.error = 'Access denied';
     res.redirect('/login');
   }
 };
@@ -46,11 +47,12 @@ function(req, res) {
   res.render('index');
 });
 
-app.get('/create', restrict,
-function(req, res) {
-  console.log('get2');
-  res.render('index');
-});
+// app.get('/create', restrict,
+// function(req, res) {
+//   console.log('get2');
+//   res.render('index');
+// });
+
 
 app.get('/links', restrict,
 function(req, res) {
@@ -59,6 +61,8 @@ function(req, res) {
     res.status(200).send(links.models);
   });
 });
+
+
 
 app.post('/links',
 function(req, res) {
@@ -92,12 +96,30 @@ function(req, res) {
   });
 });
 
+app.post('/signup',
+function(req, res) {
+
+  new User({ username: req.body.username }).fetch().then(function(found) {
+    if (found) {
+      console.log('username is taken');
+    } else {
+      Users.create({
+        username: req.body.username,
+        password: req.body.password
+      })
+        .then(function() {
+          req.session.login = true;
+          res.redirect('/');
+        });
+    }
+  });
+});
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
 app.get('/login', function(req, res) {
-  // serve login page
+  console.log('login');
   res.render('login');
 });
 
@@ -115,6 +137,19 @@ app.post('/login', function(req, res) {
 });
 
 
+
+// db.knex.schema.hasTable('users').then(function(exists) {
+//   if (!exists) {
+//     db.knex.schema.createTable('users', function (user) {
+//       user.increments('id').primary();
+//       user.string('username', 255);
+//       user.string('password', 255);
+//       user.timestamps();
+//     }).then(function (table) {
+//       console.log('Created Table', table);
+//     });
+//   }
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
